@@ -1,18 +1,25 @@
 import { useWorkoutContext } from "../hooks/useWorkoutContext";
+import { useAuthContext } from "../hooks/useAuthContext";
 
-const { useState, useEffect } = require("react");
+const { useState } = require("react");
 
 const WorkoutForm = () => {
   const [title, setTitle] = useState("");
   const [reps, setReps] = useState("");
   const [load, setLoad] = useState("");
   const [error, setError] = useState(null);
-  const [emptyFields, setEmptyFields] = useState([])
+  const [emptyFields, setEmptyFields] = useState([]);
 
-  const {workouts, dispatch} = useWorkoutContext();
+  const { workouts, dispatch } = useWorkoutContext();
+  const { user } = useAuthContext();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!user) {
+      setError("You must be logged in");
+      return;
+    }
 
     const workout = { title, load, reps };
 
@@ -21,25 +28,28 @@ const WorkoutForm = () => {
       body: JSON.stringify(workout),
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${user.token}`,
       },
     });
 
     const json = await response.json();
 
+    console.log("json", json);
+
     if (!response.ok) {
       setError(json.error);
-      setEmptyFields(json.emptyFields)
+      setEmptyFields(json.emptyFields);
     }
     if (response.ok) {
       setTitle("");
       setReps("");
       setLoad("");
       setError(null);
-      setEmptyFields([])
+      setEmptyFields([]);
 
-      dispatch({ type: "CREATE_WORKOUT", payload: json})
+      dispatch({ type: "CREATE_WORKOUT", payload: json });
 
-    //   console.log("success", json)
+      //   console.log("success", json)
     }
   };
 
@@ -52,7 +62,7 @@ const WorkoutForm = () => {
         type="text"
         onChange={(e) => setTitle(e.target.value)}
         value={title}
-        className={emptyFields.includes('title') ? 'error' : ''}
+        className={emptyFields.includes("title") ? "error" : ""}
       />
 
       <label>Load (in kg):</label>
@@ -60,7 +70,7 @@ const WorkoutForm = () => {
         type="number"
         onChange={(e) => setLoad(e.target.value)}
         value={load}
-        className={emptyFields.includes('load') ? 'error' : ''}
+        className={emptyFields.includes("load") ? "error" : ""}
       />
 
       <label>Number of Reps:</label>
@@ -68,7 +78,7 @@ const WorkoutForm = () => {
         type="number"
         onChange={(e) => setReps(e.target.value)}
         value={reps}
-        className={emptyFields.includes('reps') ? 'error' : ''}
+        className={emptyFields.includes("reps") ? "error" : ""}
       />
 
       <button>Add Workout</button>
@@ -77,4 +87,4 @@ const WorkoutForm = () => {
   );
 };
 
-export default WorkoutForm
+export default WorkoutForm;
